@@ -54,6 +54,24 @@ ApplicationWindow {
             executionResumedDialog.open()
         }
         
+        // Función SEGURA para obtener información de ejecución
+        function getCurrentExecutionInfo() {
+            if (!executionController) {
+                console.log("executionController no disponible")
+                return null
+            }
+            
+            try {
+                // Usar el slot get_current_execution_info del controller
+                var info = executionController.get_current_execution_info()
+                console.log("Información obtenida:", JSON.stringify(info))
+                return info
+            } catch (e) {
+                console.log("Error obteniendo información de ejecución:", e)
+                return null
+            }
+        }
+        
         // Componente de Dashboard (vista principal)
         Component {
             id: dashboardComponent
@@ -339,17 +357,17 @@ ApplicationWindow {
             repeat: false
             onTriggered: {
                 var programManagement = stackView.currentItem
-                if (programManagement && programManagement.executionDialog && executionController.isRunning) {
-                    // Obtener información del programa actual
-                    var currentInfo = executionController.execution_service.get_current_execution_info()
-                    if (currentInfo.is_running && currentInfo.program_name) {
+                if (programManagement && programManagement.executionDialog && executionController && executionController.isRunning) {
+                    // Obtener información del programa actual de forma segura
+                    var currentInfo = getCurrentExecutionInfo()
+                    if (currentInfo && currentInfo.is_running && currentInfo.program_name) {
                         // Simular datos del programa para abrir el diálogo
                         var programData = {
-                            id: currentInfo.execution_id,
-                            name: currentInfo.program_name,
-                            min_pressure: currentInfo.min_pressure,
-                            max_pressure: currentInfo.max_pressure,
-                            program_duration: currentInfo.program_duration / 60
+                            id: currentInfo.execution_id || 0,
+                            name: currentInfo.program_name || "Programa Actual",
+                            min_pressure: currentInfo.min_pressure || 0,
+                            max_pressure: currentInfo.max_pressure || 100,
+                            program_duration: (currentInfo.program_duration || 0) / 60
                         }
                         programManagement.executionDialog.openForProgram(programData)
                     }

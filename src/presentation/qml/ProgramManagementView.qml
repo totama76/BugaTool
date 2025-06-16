@@ -8,6 +8,13 @@ Rectangle {
     // Señales
     signal backToMain()
     
+    // Propiedades para estado de ejecución
+    property bool isExecuting: executionController ? executionController.isRunning : false
+    property string executingProgramName: executionController ? executionController.currentProgramName : ""
+    
+    // Propiedad para acceso al dialog de ejecución (para uso externo)
+    property alias executionDialog: executionDialog
+    
     gradient: Gradient {
         GradientStop { position: 0.0; color: "#2C3E50" }
         GradientStop { position: 1.0; color: "#34495E" }
@@ -18,6 +25,50 @@ Rectangle {
         console.log("ProgramManagementView cargada")
         if (programController) {
             programController.load_programs()
+        }
+        
+        // Actualizar estado de ejecución
+        updateExecutionState()
+    }
+    
+    // Función para actualizar estado de ejecución
+    function updateExecutionState() {
+        isExecuting = executionController ? executionController.isRunning : false
+        executingProgramName = executionController ? executionController.currentProgramName : ""
+        console.log("Estado de ejecución actualizado:", isExecuting, executingProgramName)
+    }
+    
+    // Función SEGURA para obtener datos del programa en ejecución
+    function getCurrentExecutionProgramData() {
+        if (!executionController || !executionController.isRunning) {
+            console.log("No hay ejecución activa")
+            return null
+        }
+        
+        try {
+            // Usar el slot del controller en lugar de acceso directo al servicio
+            var currentInfo = executionController.get_current_execution_info()
+            
+            if (!currentInfo || !currentInfo.is_running) {
+                console.log("No hay información de ejecución válida")
+                return null
+            }
+            
+            console.log("Información de ejecución obtenida:", JSON.stringify(currentInfo))
+            
+            // Crear objeto de datos del programa para el diálogo
+            return {
+                id: currentInfo.execution_id || 0,
+                name: currentInfo.program_name || "Programa Actual",
+                description: "Programa en ejecución",
+                min_pressure: currentInfo.min_pressure || 0,
+                max_pressure: currentInfo.max_pressure || 100,
+                program_duration: (currentInfo.program_duration || 0) / 60,
+                time_to_min_pressure: 5 // Valor por defecto
+            }
+        } catch (e) {
+            console.log("Error obteniendo datos de ejecución:", e)
+            return null
         }
     }
     
@@ -70,6 +121,47 @@ Rectangle {
                     color: "#ECF0F1"
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
+                }
+                
+                // Indicador de estado de ejecución en header (clickeable)
+                Rectangle {
+                    visible: isExecuting
+                    implicitWidth: 180
+                    implicitHeight: 40
+                    color: "#F39C12"
+                    radius: 8
+                    border.color: "#E67E22"
+                    border.width: 1
+                    
+                    SequentialAnimation on opacity {
+                        running: parent.visible
+                        loops: Animation.Infinite
+                        NumberAnimation { to: 0.7; duration: 1000 }
+                        NumberAnimation { to: 1.0; duration: 1000 }
+                    }
+                    
+                    Text {
+                        anchors.centerIn: parent
+                        text: `▶️ ${executingProgramName}`
+                        color: "white"
+                        font.pixelSize: 12
+                        font.bold: true
+                        elide: Text.ElideRight
+                        width: parent.width - 10
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            var programData = getCurrentExecutionProgramData()
+                            if (programData) {
+                                executionDialog.openForProgram(programData)
+                            } else {
+                                console.log("No se pudieron obtener los datos del programa en ejecución")
+                            }
+                        }
+                    }
                 }
                 
                 // Botón de limpieza (solo para administradores)
@@ -245,6 +337,7 @@ Rectangle {
                         if (programController) {
                             programController.refresh_programs()
                         }
+                        updateExecutionState()
                     }
                 }
             }
@@ -273,6 +366,10 @@ Rectangle {
                         programData: modelData
                         canManage: programController ? programController.canManage : false
                         
+                        // Pasar estado de ejecución
+                        isExecuting: programManagementView.isExecuting
+                        executingProgramName: programManagementView.executingProgramName
+                        
                         onEditRequested: {
                             programFormDialog.openForEdit(programData)
                         }
@@ -284,6 +381,15 @@ Rectangle {
                         
                         onExecuteRequested: {
                             executionDialog.openForProgram(programData)
+                        }
+                        
+                        onViewExecutionRequested: {
+                            var programData = getCurrentExecutionProgramData()
+                            if (programData) {
+                                executionDialog.openForProgram(programData)
+                            } else {
+                                console.log("No se pudieron obtener los datos del programa en ejecución")
+                            }
                         }
                     }
                     
@@ -406,7 +512,7 @@ Rectangle {
         }
     }
     
-    // Dialog de ejecución de programas
+    // Dialog de ejecución de programas - AQUÍ ESTÁ LA REFERENCIA QUE FALTABA
     ProgramExecutionDialog {
         id: executionDialog
         
@@ -542,6 +648,19 @@ Rectangle {
         
         function onOperationResult(success, message) {
             messageDialog.showMessage(message, !success)
+        }
+        
+        // Actualizar estado cuando cambia la ejecución
+        function onExecutionStateChanged() {
+            updateExecutionState()
+        }
+        
+        function onExecutionStarted(executionId) {
+            updateExecutionState()
+        }
+        
+        function onExecutionFinished(executionId, status) {
+            updateExecutionState()
         }
     }
     

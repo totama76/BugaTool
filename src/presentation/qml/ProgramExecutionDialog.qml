@@ -10,12 +10,13 @@ Dialog {
     property string currentPhase: "setup"
     property bool hasAlarm: false
     property string alarmType: ""
+    property string alarmMessage: ""
     
     signal executionRequested(int programId)
     signal stopRequested()
     
     anchors.centerIn: parent
-    width: Math.min(800, parent.width * 0.95)  // Más ancho para incluir gauge
+    width: Math.min(800, parent.width * 0.95)
     height: Math.min(600, parent.height * 0.9)
     
     title: isExecuting ? "Programa en Ejecución" : "Ejecutar Programa"
@@ -200,10 +201,18 @@ Dialog {
                 border.width: 2
                 visible: hasAlarm
                 
+                // Efecto de parpadeo para alarmas rojas
+                SequentialAnimation on opacity {
+                    running: hasAlarm && alarmType === "red"
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 0.5; duration: 500 }
+                    NumberAnimation { to: 1.0; duration: 500 }
+                }
+                
                 Text {
                     id: alarmMessageText
                     anchors.centerIn: parent
-                    text: ""
+                    text: alarmMessage
                     font.pixelSize: 14
                     font.bold: true
                     color: alarmType === "red" ? "#C0392B" : "#27AE60"
@@ -213,10 +222,10 @@ Dialog {
                 }
             }
             
-            // Progreso (visible durante ejecución)
+            // Progreso (visible durante ejecución) - RESTAURADO
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 80
+                Layout.preferredHeight: 100
                 color: "#FFFFFF"
                 radius: 10
                 border.color: "#BDC3C7"
@@ -322,19 +331,30 @@ Dialog {
                     text: isExecuting ? "Detener Ejecución" : "Iniciar Ejecución"
                     Layout.fillWidth: true
                     Layout.preferredHeight: 50
+                    // BLOQUEAR SI YA HAY OTRA EJECUCIÓN
+                    enabled: isExecuting || (!isExecuting && (!executionController || !executionController.isRunning))
                     
                     background: Rectangle {
-                        color: isExecuting ? 
-                               (parent.pressed ? "#C0392B" : "#E74C3C") :
-                               (parent.pressed ? "#27AE60" : "#2ECC71")
+                        color: {
+                            if (!parent.enabled) return "#95A5A6"
+                            return isExecuting ? 
+                                   (parent.pressed ? "#C0392B" : "#E74C3C") :
+                                   (parent.pressed ? "#27AE60" : "#2ECC71")
+                        }
                         radius: 8
-                        border.color: isExecuting ? "#A93226" : "#229954"
+                        border.color: {
+                            if (!parent.enabled) return "#7F8C8D"
+                            return isExecuting ? "#A93226" : "#229954"
+                        }
                         border.width: 1
                     }
                     
                     contentItem: Text {
-                        text: parent.text
-                        color: "white"
+                        text: {
+                            if (!parent.enabled && !isExecuting) return "Hay otra ejecución activa"
+                            return parent.text
+                        }
+                        color: parent.enabled ? "white" : "#566573"
                         font.pixelSize: 16
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
@@ -345,7 +365,7 @@ Dialog {
                         if (isExecuting) {
                             stopRequested()
                         } else {
-                            if (programData) {
+                            if (programData && (!executionController || !executionController.isRunning)) {
                                 executionRequested(programData.id)
                             }
                         }
@@ -354,7 +374,7 @@ Dialog {
             }
         }
         
-        // Panel derecho - Gauge de presión
+        // Panel derecho - Gauge de presión SINCRONIZADO
         Rectangle {
             Layout.preferredWidth: 300
             Layout.fillHeight: true
@@ -380,7 +400,8 @@ Dialog {
                     id: executionGauge
                     Layout.alignment: Qt.AlignHCenter
                     size: 220
-                    value: executionController ? executionController.currentPressure : 0
+                    // SINCRONIZAR CON MAIN CONTROLLER
+                    value: mainController ? mainController.currentPressure : 0
                     minValue: 0
                     maxValue: programData ? Math.max(100, programData.max_pressure * 1.2) : 100
                     
@@ -429,7 +450,7 @@ Dialog {
                     }
                     
                     Text {
-                        text: `Actual: ${executionController ? executionController.currentPressure.toFixed(1) : "0.0"} PSI`
+                        text: `Actual: ${mainController ? mainController.currentPressure.toFixed(1) : "0.0"} PSI`
                         font.pixelSize: 14
                         font.bold: true
                         color: "#3498DB"
@@ -521,6 +542,7 @@ Dialog {
             isExecuting = true
             hasAlarm = false
             currentPhase = "setup"
+            console.log("Ejecución iniciada en diálogo:", executionId)
         }
         
         function onExecutionFinished(executionId, status) {
@@ -530,18 +552,21 @@ Dialog {
             if (status === "completed") {
                 hasAlarm = true
                 alarmType = "green"
-                alarmMessageText.text = "¡Programa completado exitosamente!"
+                alarmMessage = "¡Programa completado exitosamente!"
                 
                 // Auto-cerrar después de un delay
                 closeTimer.start()
             } else {
                 hasAlarm = false
             }
+            
+            console.log("Ejecución finalizada en diálogo:", executionId, status)
         }
         
         function onProgressUpdated(elapsed, remaining, percentage) {
             progressBar.value = percentage
             progressText.text = `${percentage}%`
+            console.log("Progreso actualizado:", percentage + "%")
         }
         
         function onStatusChanged(status) {
@@ -549,7 +574,7 @@ Dialog {
         }
     }
     
-    // Connections para manejar cambios de fase y alarmas
+    // Connections para manejar cambios de fase y alarmas del SERVICIO
     Connections {
         target: executionController ? executionController.execution_service : null
         
@@ -561,8 +586,8 @@ Dialog {
         function onAlarmTriggered(alarmType, message) {
             hasAlarm = true
             executionDialog.alarmType = alarmType
-            alarmMessageText.text = message
-            console.log("Alarma:", alarmType, message)
+            alarmMessage = message
+            console.log("Alarma activada:", alarmType, message)
         }
     }
     
@@ -584,6 +609,9 @@ Dialog {
         isExecuting = executionController ? executionController.isRunning : false
         currentPhase = "setup"
         hasAlarm = false
+        alarmMessage = ""
+        
+        console.log("Abriendo diálogo para programa:", program.name, "isExecuting:", isExecuting)
         open()
     }
 }

@@ -99,6 +99,22 @@ class ExecutionController(QObject):
             print(f"Error en validate_execution_state: {e}")
             self.operationResult.emit(False, "Error interno del sistema")
     
+    @pyqtSlot(result='QVariant')
+    def get_current_execution_info(self):
+        """Obtiene información de la ejecución actual - MÉTODO SLOT PARA QML"""
+        try:
+            if not self.execution_service:
+                print("execution_service no disponible")
+                return None
+            
+            info = self.execution_service.get_current_execution_info()
+            print(f"Información de ejecución obtenida: {info}")
+            return info
+            
+        except Exception as e:
+            print(f"Error obteniendo información de ejecución: {e}")
+            return None
+    
     def _on_execution_finished(self, execution_id: int, status: str):
         """Maneja el fin de una ejecución"""
         self.executionStateChanged.emit()

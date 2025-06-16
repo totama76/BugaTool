@@ -1,131 +1,152 @@
 import QtQuick 2.15
 
 Item {
-    id: root
+    id: gauge
     
     property real value: 0
     property real minValue: 0
     property real maxValue: 100
-    property real size: 200
-    property color backgroundColor: "#34495E"
-    property color foregroundColor: "#3498DB"
-    property color dangerColor: "#E74C3C"
-    property color textColor: "#ECF0F1"
+    property int size: 200
+    property color gaugeColor: "#3498DB"
+    property color backgroundColor: "#ECF0F1"
+    property color needleColor: "#E74C3C"
     
     width: size
     height: size
     
-    // Fondo del gauge
+    // Validar valor antes de usar
+    property real safeValue: isNaN(value) ? 0 : Math.max(minValue, Math.min(maxValue, value))
+    property real valueRange: maxValue - minValue
+    property real normalizedValue: valueRange > 0 ? (safeValue - minValue) / valueRange : 0
+    
+    // Círculo de fondo
     Rectangle {
         id: background
-        anchors.fill: parent
-        color: "transparent"
-        border.color: backgroundColor
-        border.width: 8
-        radius: width / 2
-        
-        // Líneas de marcas
-        Repeater {
-            model: 11
-            
-            Rectangle {
-                width: 2
-                height: 15
-                color: root.textColor
-                opacity: 0.7
-                
-                property real angle: (index / 10) * 240 - 120
-                
-                transform: [
-                    Rotation {
-                        origin.x: 1
-                        origin.y: height
-                        angle: parent.angle
-                    }
-                ]
-                
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.top: parent.top
-                anchors.topMargin: 4
-            }
-        }
+        anchors.centerIn: parent
+        width: size
+        height: size
+        radius: size / 2
+        color: backgroundColor
+        border.color: "#BDC3C7"
+        border.width: 3
     }
     
     // Arco de progreso
     Canvas {
         id: progressArc
-        anchors.fill: parent
+        anchors.fill: background
         
         onPaint: {
-            var ctx = getContext("2d");
-            ctx.reset();
+            var ctx = getContext("2d")
+            ctx.clearRect(0, 0, width, height)
             
-            var centerX = width / 2;
-            var centerY = height / 2;
-            var radius = (width - 20) / 2;
+            var centerX = width / 2
+            var centerY = height / 2
+            var radius = (Math.min(width, height) / 2) - 10
             
-            // Calcular ángulo basado en el valor
-            var normalizedValue = (root.value - root.minValue) / (root.maxValue - root.minValue);
-            var angle = normalizedValue * 240 * Math.PI / 180;
-            var startAngle = -120 * Math.PI / 180;
+            // Validar normalizedValue antes de usar
+            var safeNormalizedValue = isNaN(normalizedValue) ? 0 : Math.max(0, Math.min(1, normalizedValue))
+            var endAngle = -Math.PI / 2 + (safeNormalizedValue * 1.5 * Math.PI)
             
             // Dibujar arco de progreso
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, startAngle + angle);
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = root.value > (root.maxValue * 0.8) ? root.dangerColor : root.foregroundColor;
-            ctx.stroke();
-        }
-        
-        Connections {
-            target: root
-            function onValueChanged() { progressArc.requestPaint(); }
+            ctx.beginPath()
+            ctx.arc(centerX, centerY, radius, -Math.PI / 2, endAngle)
+            ctx.lineWidth = 8
+            ctx.strokeStyle = gaugeColor
+            ctx.stroke()
         }
     }
     
-    // Aguja central
+    // Marcas de escala
+    Repeater {
+        model: 11
+        
+        Rectangle {
+            property real angle: (index / 10) * 1.5 * Math.PI - Math.PI / 2
+            property real markRadius: size / 2 - 25
+            
+            x: size / 2 + Math.cos(angle) * markRadius - width / 2
+            y: size / 2 + Math.sin(angle) * markRadius - height / 2
+            
+            width: index % 2 === 0 ? 3 : 2
+            height: index % 2 === 0 ? 15 : 10
+            color: "#7F8C8D"
+            
+            transform: Rotation {
+                origin.x: width / 2
+                origin.y: height / 2
+                angle: parent.angle * 180 / Math.PI + 90
+            }
+        }
+    }
+    
+    // Etiquetas numéricas
+    Repeater {
+        model: 6
+        
+        Text {
+            property real angle: (index / 5) * 1.5 * Math.PI - Math.PI / 2
+            property real labelRadius: size / 2 - 45
+            property real labelValue: minValue + (index / 5) * (maxValue - minValue)
+            
+            x: size / 2 + Math.cos(angle) * labelRadius - width / 2
+            y: size / 2 + Math.sin(angle) * labelRadius - height / 2
+            
+            text: Math.round(labelValue).toString()
+            font.pixelSize: 12
+            font.bold: true
+            color: "#2C3E50"
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
+    }
+    
+    // Aguja
     Rectangle {
         id: needle
-        width: 4
-        height: root.size * 0.35
-        color: root.value > (root.maxValue * 0.8) ? root.dangerColor : root.foregroundColor
-        radius: 2
-        
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.verticalCenter
-        anchors.bottomMargin: -2
-        
-        transformOrigin: Item.Bottom
-        
-        rotation: {
-            var normalizedValue = (root.value - root.minValue) / (root.maxValue - root.minValue);
-            return -120 + (normalizedValue * 240);
-        }
-        
-        Behavior on rotation {
-            NumberAnimation { duration: 500; easing.type: Easing.OutQuad }
-        }
-    }
-    
-    // Centro del gauge
-    Rectangle {
-        width: 12
-        height: 12
-        radius: 6
-        color: root.textColor
         anchors.centerIn: parent
+        width: 4
+        height: size / 2 - 30
+        color: needleColor
+        radius: 2
+        antialiasing: true
+        
+        transform: Rotation {
+            origin.x: needle.width / 2
+            origin.y: needle.height - 10
+            angle: {
+                var safeNormalizedValue = isNaN(normalizedValue) ? 0 : Math.max(0, Math.min(1, normalizedValue))
+                return (safeNormalizedValue * 270) - 135
+            }
+        }
     }
     
-    // Texto del valor
+    // Centro de la aguja
+    Rectangle {
+        anchors.centerIn: parent
+        width: 16
+        height: 16
+        radius: 8
+        color: needleColor
+        border.color: "#FFFFFF"
+        border.width: 2
+    }
+    
+    // Valor actual
     Text {
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: parent.height * 0.25
-        
-        text: root.value.toFixed(1)
-        font.pixelSize: root.size * 0.12
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: size / 4
+        text: safeValue.toFixed(1) + " PSI"
+        font.pixelSize: 16
         font.bold: true
-        color: root.textColor
+        color: "#2C3E50"
         horizontalAlignment: Text.AlignHCenter
+    }
+    
+    // Actualizar canvas cuando cambia el valor
+    onNormalizedValueChanged: {
+        if (progressArc) {
+            progressArc.requestPaint()
+        }
     }
 }
