@@ -44,13 +44,15 @@ Item {
             var centerY = height / 2
             var radius = (Math.min(width, height) / 2) - 10
             
-            // Validar normalizedValue antes de usar
+            // Ángulo inicial y final en radianes (de -135° a +135°)
+            var startAngle = (225 * Math.PI) / 180   // 225°
+            var endAngle = (45 * Math.PI) / 180      // 45°
             var safeNormalizedValue = isNaN(normalizedValue) ? 0 : Math.max(0, Math.min(1, normalizedValue))
-            var endAngle = -Math.PI / 2 + (safeNormalizedValue * 1.5 * Math.PI)
+            var currentAngle = startAngle + (endAngle - startAngle) * safeNormalizedValue
             
             // Dibujar arco de progreso
             ctx.beginPath()
-            ctx.arc(centerX, centerY, radius, -Math.PI / 2, endAngle)
+            ctx.arc(centerX, centerY, radius, startAngle, currentAngle, false)
             ctx.lineWidth = 8
             ctx.strokeStyle = gaugeColor
             ctx.stroke()
@@ -62,7 +64,8 @@ Item {
         model: 11
         
         Rectangle {
-            property real angle: (index / 10) * 1.5 * Math.PI - Math.PI / 2
+            // Ángulo de -135° a +135°
+            property real angle: (-135 + (index / 10) * 270) * Math.PI / 180
             property real markRadius: size / 2 - 25
             
             x: size / 2 + Math.cos(angle) * markRadius - width / 2
@@ -75,7 +78,7 @@ Item {
             transform: Rotation {
                 origin.x: width / 2
                 origin.y: height / 2
-                angle: parent.angle * 180 / Math.PI + 90
+                angle: angle * 180 / Math.PI + 90
             }
         }
     }
@@ -85,7 +88,8 @@ Item {
         model: 6
         
         Text {
-            property real angle: (index / 5) * 1.5 * Math.PI - Math.PI / 2
+            // Ángulo de -135° a +135°
+            property real angle: (-135 + (index / 5) * 270) * Math.PI / 180
             property real labelRadius: size / 2 - 45
             property real labelValue: minValue + (index / 5) * (maxValue - minValue)
             
@@ -113,7 +117,7 @@ Item {
         
         transform: Rotation {
             origin.x: needle.width / 2
-            origin.y: needle.height - 10
+            origin.y: needle.height
             angle: {
                 var safeNormalizedValue = isNaN(normalizedValue) ? 0 : Math.max(0, Math.min(1, normalizedValue))
                 return (safeNormalizedValue * 270) - 135
