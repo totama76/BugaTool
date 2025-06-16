@@ -6,7 +6,7 @@ Gestiona la ejecución en tiempo real de programas de control
 import time
 import threading
 from datetime import datetime, timedelta
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Callable, Dict, Any, List  # ✅ Añadida importación List
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
 from data.repositories.execution_repository import ExecutionRepository

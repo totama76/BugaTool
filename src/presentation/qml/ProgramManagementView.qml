@@ -380,4 +380,35 @@ Rectangle {
                     
                     onClicked: {
                         if (programController && deleteConfirmDialog.programToDelete) {
-                            programController.delete_program(deleteConfirmDialog.programToDelete.i
+                            programController.delete_program(deleteConfirmDialog.programToDelete.id)
+                        }
+                        deleteConfirmDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    
+    // Dialog para mensajes
+    MessageDialog {
+        id: messageDialog
+    }
+    
+    // Connections para manejar resultados de operaciones
+    Connections {
+        target: programController
+        
+        function onOperationResult(success, message) {
+            messageDialog.showMessage(message, !success)
+        }
+    }
+    
+    // Debug: Connections para monitorear cambios
+    Connections {
+        target: programController
+        
+        function onProgramsChanged() {
+            console.log("Programas actualizados en QML, total:", programController ? programController.programs.length : 0)
+        }
+    }
+}
