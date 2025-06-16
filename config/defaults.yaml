@@ -1,0 +1,55 @@
+# Configuración por defecto del Sistema de Control de Presión
+# Fecha: 2025-06-16 15:21:55 UTC
+
+# Configuración general
+language: "es"
+theme: "default"
+
+# Configuración de pantalla
+screen:
+  width: 800
+  height: 480
+  fullscreen: true
+  touch_enabled: true
+
+# Unidades del sistema
+units:
+  pressure: "PSI"
+  time: "minutes"
+  temperature: "celsius"
+
+# Valores por defecto para nuevos programas
+default_program:
+  min_pressure: 10.0
+  max_pressure: 80.0
+  time_to_min_pressure: 5
+  program_duration: 30
+
+# Configuración de alarmas
+alarms:
+  colors:
+    pressure_not_reached: "#E74C3C"    # Rojo
+    pressure_reached: "#2ECC71"        # Verde
+    pressure_exceeded: "#E74C3C"       # Rojo
+    normal_operation: "#3498DB"        # Azul
+  
+  sounds:
+    enabled: true
+    volume: 0.8
+
+# Configuración de hardware (para desarrollo futuro)
+hardware:
+  simulation_mode: true
+  pressure_sensor:
+    pin: 18
+    type: "analog"
+  
+  outputs:
+    light_pin: 23
+    siren_pin: 24
+
+# Configuración de la base de datos
+database:
+  path: "data/pressure_control.db"
+  backup_enabled: true
+  backup_interval_hours: 24

@@ -1,0 +1,45 @@
+# English Translations
+# Pressure Control System
+
+app:
+  title: "Pressure Control System"
+  version: "v0.1.0"
+
+# Main interface texts
+main:
+  pressure_control: "Pressure Control"
+  current_pressure: "Current Pressure"
+  system_status: "System Status"
+  start_simulation: "Start Simulation"
+  stop_simulation: "Stop Simulation"
+
+# System states
+status:
+  ready: "Ready"
+  simulation_active: "Simulation active"
+  simulation_stopped: "Simulation stopped"
+  program_running: "Program running"
+  alarm_active: "Alarm active"
+
+# Units
+units:
+  psi: "PSI"
+  bar: "Bar"
+  minutes: "min"
+  seconds: "sec"
+
+# General buttons
+buttons:
+  start: "Start"
+  stop: "Stop"
+  pause: "Pause"
+  reset: "Reset"
+  save: "Save"
+  cancel: "Cancel"
+  accept: "Accept"
+
+# Error messages
+errors:
+  config_load: "Error loading configuration"
+  database_connection: "Database connection error"
+  hardware_error: "Hardware error"

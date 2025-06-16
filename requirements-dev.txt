@@ -1,0 +1,22 @@
+# Dependencias de desarrollo
+# Incluye herramientas de testing y desarrollo
+
+# Dependencias principales
+-r requirements.txt
+
+# Testing
+pytest>=7.0.0
+pytest-qt>=4.2.0
+pytest-cov>=4.0.0
+
+# Linting y formateo
+flake8>=6.0.0
+black>=23.0.0
+isort>=5.12.0
+
+# Documentación
+sphinx>=6.0.0
+sphinx-rtd-theme>=1.2.0
+
+# Herramientas de desarrollo
+pre-commit>=3.0.0

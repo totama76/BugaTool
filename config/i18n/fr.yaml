@@ -1,0 +1,45 @@
+# Traductions Françaises
+# Système de Contrôle de Pression
+
+app:
+  title: "Système de Contrôle de Pression"
+  version: "v0.1.0"
+
+# Textes de l'interface principale
+main:
+  pressure_control: "Contrôle de Pression"
+  current_pressure: "Pression Actuelle"
+  system_status: "État du Système"
+  start_simulation: "Démarrer Simulation"
+  stop_simulation: "Arrêter Simulation"
+
+# États du système
+status:
+  ready: "Prêt"
+  simulation_active: "Simulation active"
+  simulation_stopped: "Simulation arrêtée"
+  program_running: "Programme en cours"
+  alarm_active: "Alarme active"
+
+# Unités
+units:
+  psi: "PSI"
+  bar: "Bar"
+  minutes: "min"
+  seconds: "sec"
+
+# Boutons généraux
+buttons:
+  start: "Démarrer"
+  stop: "Arrêter"
+  pause: "Pause"
+  reset: "Réinitialiser"
+  save: "Sauvegarder"
+  cancel: "Annuler"
+  accept: "Accepter"
+
+# Messages d'erreur
+errors:
+  config_load: "Erreur lors du chargement de la configuration"
+  database_connection: "Erreur de connexion à la base de données"
+  hardware_error: "Erreur matérielle"
