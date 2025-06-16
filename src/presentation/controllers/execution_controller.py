@@ -17,6 +17,8 @@ class ExecutionController(QObject):
     statusChanged = pyqtSignal(str)  # status message
     operationResult = pyqtSignal(bool, str)  # success, message
     executionStateChanged = pyqtSignal()  # Para actualizar propiedades
+    cleanupCompleted = pyqtSignal(int)  # cantidad de ejecuciones limpiadas
+    executionResumed = pyqtSignal('QVariant')  # program data when execution is resumed
     
     def __init__(self, auth_service: AuthService, parent=None):
         super().__init__(parent)
@@ -62,6 +64,39 @@ class ExecutionController(QObject):
                 
         except Exception as e:
             print(f"Error en stop_execution: {e}")
+            self.operationResult.emit(False, "Error interno del sistema")
+    
+    @pyqtSlot()
+    def clean_phantom_executions(self):
+        """Limpia ejecuciones fantasma manualmente"""
+        try:
+            cleaned_count = self.execution_service.clean_phantom_executions()
+            
+            self.cleanupCompleted.emit(cleaned_count)
+            
+            if cleaned_count > 0:
+                self.operationResult.emit(True, f"Se limpiaron {cleaned_count} ejecuciones fantasma")
+            else:
+                self.operationResult.emit(True, "No se encontraron ejecuciones fantasma para limpiar")
+                
+        except Exception as e:
+            print(f"Error en clean_phantom_executions: {e}")
+            self.operationResult.emit(False, "Error interno del sistema")
+    
+    @pyqtSlot()
+    def validate_execution_state(self):
+        """Valida el estado actual de ejecución"""
+        try:
+            is_valid = self.execution_service.validate_execution_state()
+            
+            if not is_valid:
+                self.executionStateChanged.emit()
+                self.operationResult.emit(True, "Estado de ejecución validado y corregido")
+            else:
+                self.operationResult.emit(True, "Estado de ejecución válido")
+                
+        except Exception as e:
+            print(f"Error en validate_execution_state: {e}")
             self.operationResult.emit(False, "Error interno del sistema")
     
     def _on_execution_finished(self, execution_id: int, status: str):

@@ -46,6 +46,9 @@ class PressureControlApp:
         print("Inicializando base de datos...")
         self._initialize_database()
         
+        # Configurar verificación de ejecuciones después del login
+        self._setup_execution_verification()
+        
         self._setup_application()
         self._register_qml_types()
         self._load_main_qml()
@@ -59,6 +62,61 @@ class PressureControlApp:
             print("Base de datos inicializada correctamente")
         except Exception as e:
             print(f"Error inicializando base de datos: {e}")
+    
+    def _setup_execution_verification(self):
+        """Configura la verificación de ejecuciones después del login"""
+        try:
+            # Conectar señal de login exitoso para verificar ejecuciones
+            self.auth_controller.loginResult.connect(self._on_login_success)
+            print("Verificación de ejecuciones configurada para después del login")
+            
+        except Exception as e:
+            print(f"Error configurando verificación de ejecuciones: {e}")
+    
+    def _on_login_success(self, success: bool, message: str):
+        """Maneja el resultado del login y verifica ejecuciones si es exitoso"""
+        if success:
+            print("Login exitoso, verificando ejecuciones incompletas...")
+            # Pequeño delay para asegurar que el login se complete
+            QTimer.singleShot(500, self._check_incomplete_executions_after_login)
+    
+    def _check_incomplete_executions_after_login(self):
+        """Verifica ejecuciones incompletas después del login exitoso"""
+        try:
+            execution_service = self.execution_controller.get_execution_service()
+            incomplete_info = execution_service.check_for_incomplete_execution()
+            
+            if incomplete_info and incomplete_info.get('should_resume'):
+                execution = incomplete_info['execution']
+                program = incomplete_info['program']
+                
+                print(f"Ejecución incompleta encontrada después del login: {program.name}")
+                
+                # Resumir la ejecución
+                if execution_service.resume_execution(execution, program):
+                    # Notificar a QML que debe mostrar la ejecución
+                    self.engine.rootContext().setContextProperty("shouldShowExecutionAfterLogin", True)
+                    self.engine.rootContext().setContextProperty("resumedProgramAfterLogin", program.to_dict())
+                    
+                    # Emitir señal para que QML maneje la navegación
+                    self.execution_controller.executionResumed.emit(program.to_dict())
+                else:
+                    # Si no se puede resumir, marcar como detenida
+                    from datetime import datetime
+                    execution.status = 'stopped'
+                    execution.stopped_manually = True
+                    execution.end_time = datetime.now()
+                    execution_service.execution_repository.update_execution(execution)
+                    print("No se pudo resumir la ejecución, marcada como detenida")
+            else:
+                print("No se encontraron ejecuciones incompletas")
+                self.engine.rootContext().setContextProperty("shouldShowExecutionAfterLogin", False)
+                self.engine.rootContext().setContextProperty("resumedProgramAfterLogin", None)
+                
+        except Exception as e:
+            print(f"Error verificando ejecuciones después del login: {e}")
+            self.engine.rootContext().setContextProperty("shouldShowExecutionAfterLogin", False)
+            self.engine.rootContext().setContextProperty("resumedProgramAfterLogin", None)
     
     def _setup_application(self):
         """Configura propiedades básicas de la aplicación"""
@@ -103,6 +161,10 @@ class PressureControlApp:
         self.engine.rootContext().setContextProperty("programController", self.program_controller)
         self.engine.rootContext().setContextProperty("executionController", self.execution_controller)
         self.engine.rootContext().setContextProperty("i18nManager", self.i18n_manager)
+        
+        # Inicializar propiedades de ejecución resumida (se actualizarán después del login)
+        self.engine.rootContext().setContextProperty("shouldShowExecutionAfterLogin", False)
+        self.engine.rootContext().setContextProperty("resumedProgramAfterLogin", None)
         
         # Cargar la interfaz principal
         self.engine.load(QUrl.fromLocalFile(str(qml_file)))

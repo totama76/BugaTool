@@ -72,6 +72,34 @@ Rectangle {
                     horizontalAlignment: Text.AlignHCenter
                 }
                 
+                // Botón de limpieza (solo para administradores)
+                Button {
+                    text: "🧹 Limpiar"
+                    visible: programController ? programController.canManage : false
+                    implicitWidth: 120
+                    implicitHeight: 40
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#E67E22" : "#F39C12"
+                        radius: 8
+                        border.color: "#D68910"
+                        border.width: 1
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        cleanupDialog.open()
+                    }
+                }
+                
                 Button {
                     text: "Nuevo Programa"
                     visible: programController ? programController.canManage : false
@@ -272,6 +300,103 @@ Rectangle {
         }
     }
     
+    // Dialog de limpieza de ejecuciones fantasma
+    Dialog {
+        id: cleanupDialog
+        
+        anchors.centerIn: parent
+        width: Math.min(500, parent.width * 0.8)
+        height: 250
+        
+        title: "Limpiar Ejecuciones Fantasma"
+        modal: true
+        
+        background: Rectangle {
+            color: "#ECF0F1"
+            radius: 12
+            border.color: "#F39C12"
+            border.width: 2
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 30
+            spacing: 20
+            
+            Text {
+                Layout.fillWidth: true
+                text: "Esta operación limpiará las ejecuciones 'fantasma' que pueden estar causando problemas de detección."
+                font.pixelSize: 14
+                color: "#2C3E50"
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            Text {
+                Layout.fillWidth: true
+                text: "Se marcarán como detenidas las ejecuciones con más de 24 horas sin actualizar."
+                font.pixelSize: 12
+                color: "#7F8C8D"
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 20
+                
+                Button {
+                    text: "Cancelar"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 45
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#95A5A6" : "#BDC3C7"
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#2C3E50"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: cleanupDialog.close()
+                }
+                
+                Button {
+                    text: "Limpiar Ahora"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 45
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#E67E22" : "#F39C12"
+                        radius: 8
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        if (executionController) {
+                            executionController.clean_phantom_executions()
+                        }
+                        cleanupDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    
     // Dialog para crear/editar programas
     ProgramFormDialog {
         id: programFormDialog
@@ -397,6 +522,23 @@ Rectangle {
     // Connections para manejar resultados de operaciones
     Connections {
         target: programController
+        
+        function onOperationResult(success, message) {
+            messageDialog.showMessage(message, !success)
+        }
+    }
+    
+    // Connections para limpieza de ejecuciones
+    Connections {
+        target: executionController
+        
+        function onCleanupCompleted(count) {
+            console.log(`Limpieza completada: ${count} ejecuciones`)
+            // Refrescar lista de programas después de limpieza
+            if (programController) {
+                programController.refresh_programs()
+            }
+        }
         
         function onOperationResult(success, message) {
             messageDialog.showMessage(message, !success)

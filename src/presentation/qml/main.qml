@@ -5,11 +5,11 @@ import QtQuick.Layouts 1.15
 ApplicationWindow {
     id: window
     visible: true
-    width: 1200  // Aumentado de 800 a 1200
-    height: 800  // Aumentado de 480 a 800
+    width: 1200
+    height: 800
     title: "Sistema de Control de Presión - v0.1.0"
     
-    // Configuración para pantalla táctil - removido FramelessWindowHint para permitir redimensionar
+    // Configuración para pantalla táctil
     flags: Qt.Window
     
     // Stack para manejar las diferentes vistas
@@ -17,8 +17,8 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         
-        // Vista inicial: Login o Dashboard dependiendo del estado de autenticación
-        initialItem: authController && authController.isAuthenticated ? dashboardComponent : loginComponent
+        // Vista inicial: Login (siempre empezar por aquí)
+        initialItem: loginComponent
         
         // Componente de Login
         Component {
@@ -26,9 +26,32 @@ ApplicationWindow {
             
             LoginView {
                 onLoginSuccess: {
+                    console.log("Login exitoso, navegando a dashboard")
                     stackView.replace(dashboardComponent)
+                    
+                    // Verificar ejecuciones después de un pequeño delay
+                    executionCheckTimer.start()
                 }
             }
+        }
+        
+        // Timer para verificar ejecuciones después del login
+        Timer {
+            id: executionCheckTimer
+            interval: 1000  // 1 segundo después del login
+            repeat: false
+            onTriggered: {
+                console.log("Verificando ejecuciones después del login...")
+                if (shouldShowExecutionAfterLogin && resumedProgramAfterLogin) {
+                    console.log("Ejecución resumida detectada:", resumedProgramAfterLogin.name)
+                    showExecutionResumedDialog()
+                }
+            }
+        }
+        
+        // Función para mostrar el diálogo de ejecución resumida
+        function showExecutionResumedDialog() {
+            executionResumedDialog.open()
         }
         
         // Componente de Dashboard (vista principal)
@@ -43,13 +66,13 @@ ApplicationWindow {
                 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 30  // Aumentado de 20 a 30
-                    spacing: 25  // Aumentado de 20 a 25
+                    anchors.margins: 30
+                    spacing: 25
                     
                     // Header con título, usuario y estado
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 100  // Aumentado de 80 a 100
+                        Layout.preferredHeight: 100
                         color: "transparent"
                         border.color: "#3498DB"
                         border.width: 2
@@ -57,11 +80,11 @@ ApplicationWindow {
                         
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 15  // Aumentado de 10 a 15
+                            anchors.margins: 15
                             
                             Text {
                                 text: "Control de Presión"
-                                font.pixelSize: 28  // Aumentado de 24 a 28
+                                font.pixelSize: 28
                                 font.bold: true
                                 color: "#ECF0F1"
                                 Layout.fillWidth: true
@@ -69,11 +92,11 @@ ApplicationWindow {
                             
                             // Información del usuario
                             Column {
-                                spacing: 5  // Aumentado de 2 a 5
+                                spacing: 5
                                 
                                 Text {
                                     text: authController ? authController.currentUsername : ""
-                                    font.pixelSize: 16  // Aumentado de 14 a 16
+                                    font.pixelSize: 16
                                     font.bold: true
                                     color: "#3498DB"
                                     horizontalAlignment: Text.AlignRight
@@ -81,9 +104,45 @@ ApplicationWindow {
                                 
                                 Text {
                                     text: authController ? authController.currentRole : ""
-                                    font.pixelSize: 14  // Aumentado de 12 a 14
+                                    font.pixelSize: 14
                                     color: "#BDC3C7"
                                     horizontalAlignment: Text.AlignRight
+                                }
+                            }
+                            
+                            // Indicador de ejecución en curso
+                            Rectangle {
+                                visible: executionController ? executionController.isRunning : false
+                                width: 120
+                                height: 40
+                                color: "#E74C3C"
+                                radius: 8
+                                border.color: "#C0392B"
+                                border.width: 1
+                                
+                                // Efecto de parpadeo
+                                SequentialAnimation on opacity {
+                                    running: parent.visible
+                                    loops: Animation.Infinite
+                                    NumberAnimation { to: 0.3; duration: 800 }
+                                    NumberAnimation { to: 1.0; duration: 800 }
+                                }
+                                
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "🔴 EJECUTANDO"
+                                    color: "white"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                                
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        // Ir directamente a programas y abrir ejecución
+                                        stackView.push(programManagementComponent)
+                                        openCurrentExecutionTimer.start()
+                                    }
                                 }
                             }
                             
@@ -91,12 +150,12 @@ ApplicationWindow {
                             Button {
                                 text: "Programas"
                                 visible: authController ? authController.canManagePrograms : false
-                                implicitWidth: 120  // Tamaño fijo más grande
-                                implicitHeight: 40  // Altura fija más grande
+                                implicitWidth: 120
+                                implicitHeight: 40
                                 
                                 background: Rectangle {
                                     color: parent.pressed ? "#8E44AD" : "#9B59B6"
-                                    radius: 8  // Aumentado de 6 a 8
+                                    radius: 8
                                     border.color: "#7D3C98"
                                     border.width: 1
                                 }
@@ -104,7 +163,7 @@ ApplicationWindow {
                                 contentItem: Text {
                                     text: parent.text
                                     color: "white"
-                                    font.pixelSize: 14  // Aumentado de 12 a 14
+                                    font.pixelSize: 14
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -118,12 +177,12 @@ ApplicationWindow {
                             // Botón logout
                             Button {
                                 text: "Salir"
-                                implicitWidth: 80  // Tamaño fijo más grande
-                                implicitHeight: 40  // Altura fija más grande
+                                implicitWidth: 80
+                                implicitHeight: 40
                                 
                                 background: Rectangle {
                                     color: parent.pressed ? "#C0392B" : "#E74C3C"
-                                    radius: 8  // Aumentado de 6 a 8
+                                    radius: 8
                                     border.color: "#A93226"
                                     border.width: 1
                                 }
@@ -131,7 +190,7 @@ ApplicationWindow {
                                 contentItem: Text {
                                     text: parent.text
                                     color: "white"
-                                    font.pixelSize: 14  // Aumentado de 12 a 14
+                                    font.pixelSize: 14
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -157,7 +216,7 @@ ApplicationWindow {
                         PressureGauge {
                             id: pressureGauge
                             anchors.centerIn: parent
-                            size: Math.min(parent.width, parent.height) * 0.6  // Reducido de 0.7 a 0.6 para dar más espacio
+                            size: Math.min(parent.width, parent.height) * 0.6
                             value: mainController ? mainController.currentPressure : 0
                             minValue: 0
                             maxValue: 100
@@ -167,7 +226,7 @@ ApplicationWindow {
                     // Panel de control inferior (funcionalidad existente preservada)
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 120  // Aumentado de 100 a 120
+                        Layout.preferredHeight: 120
                         color: "transparent"
                         border.color: "#34495E"
                         border.width: 1
@@ -175,25 +234,27 @@ ApplicationWindow {
                         
                         RowLayout {
                             anchors.fill: parent
-                            anchors.margins: 20  // Aumentado de 15 a 20
-                            spacing: 25  // Aumentado de 20 a 25
+                            anchors.margins: 20
+                            spacing: 25
                             
                             Button {
                                 text: "Iniciar Simulación"
-                                Layout.preferredWidth: 180  // Aumentado de 150 a 180
+                                Layout.preferredWidth: 180
                                 Layout.fillHeight: true
+                                enabled: !(executionController && executionController.isRunning)
                                 
                                 background: Rectangle {
-                                    color: parent.pressed ? "#27AE60" : "#2ECC71"
-                                    radius: 10  // Aumentado de 8 a 10
-                                    border.color: "#229954"
+                                    color: parent.enabled ? 
+                                           (parent.pressed ? "#27AE60" : "#2ECC71") : "#95A5A6"
+                                    radius: 10
+                                    border.color: parent.enabled ? "#229954" : "#7F8C8D"
                                     border.width: 1
                                 }
                                 
                                 contentItem: Text {
-                                    text: parent.text
+                                    text: parent.enabled ? parent.text : "Ejecución activa"
                                     color: "white"
-                                    font.pixelSize: 16  // Aumentado de 14 a 16
+                                    font.pixelSize: 16
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -208,12 +269,12 @@ ApplicationWindow {
                             
                             Button {
                                 text: "Detener Simulación"
-                                Layout.preferredWidth: 180  // Aumentado de 150 a 180
+                                Layout.preferredWidth: 180
                                 Layout.fillHeight: true
                                 
                                 background: Rectangle {
                                     color: parent.pressed ? "#C0392B" : "#E74C3C"
-                                    radius: 10  // Aumentado de 8 a 10
+                                    radius: 10
                                     border.color: "#A93226"
                                     border.width: 1
                                 }
@@ -221,7 +282,7 @@ ApplicationWindow {
                                 contentItem: Text {
                                     text: parent.text
                                     color: "white"
-                                    font.pixelSize: 16  // Aumentado de 14 a 16
+                                    font.pixelSize: 16
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
@@ -237,19 +298,19 @@ ApplicationWindow {
                             Item { Layout.fillWidth: true }
                             
                             Column {
-                                spacing: 8  // Aumentado de 5 a 8
+                                spacing: 8
                                 
                                 Text {
                                     text: "Presión Actual"
                                     color: "#BDC3C7"
-                                    font.pixelSize: 14  // Aumentado de 12 a 14
+                                    font.pixelSize: 14
                                     horizontalAlignment: Text.AlignHCenter
                                 }
                                 
                                 Text {
                                     text: (mainController ? mainController.currentPressure.toFixed(1) : "0.0") + " PSI"
                                     color: "#ECF0F1"
-                                    font.pixelSize: 22  // Aumentado de 18 a 22
+                                    font.pixelSize: 22
                                     font.bold: true
                                     horizontalAlignment: Text.AlignHCenter
                                 }
@@ -269,6 +330,167 @@ ApplicationWindow {
                     stackView.pop()
                 }
             }
+        }
+        
+        // Timer para abrir ejecución actual
+        Timer {
+            id: openCurrentExecutionTimer
+            interval: 500
+            repeat: false
+            onTriggered: {
+                var programManagement = stackView.currentItem
+                if (programManagement && programManagement.executionDialog && executionController.isRunning) {
+                    // Obtener información del programa actual
+                    var currentInfo = executionController.execution_service.get_current_execution_info()
+                    if (currentInfo.is_running && currentInfo.program_name) {
+                        // Simular datos del programa para abrir el diálogo
+                        var programData = {
+                            id: currentInfo.execution_id,
+                            name: currentInfo.program_name,
+                            min_pressure: currentInfo.min_pressure,
+                            max_pressure: currentInfo.max_pressure,
+                            program_duration: currentInfo.program_duration / 60
+                        }
+                        programManagement.executionDialog.openForProgram(programData)
+                    }
+                }
+            }
+        }
+    }
+    
+    // Dialog para ejecución resumida
+    Dialog {
+        id: executionResumedDialog
+        
+        anchors.centerIn: parent
+        width: Math.min(600, parent.width * 0.8)
+        height: 350
+        
+        title: "Ejecución Resumida"
+        modal: true
+        
+        background: Rectangle {
+            color: "#ECF0F1"
+            radius: 12
+            border.color: "#F39C12"
+            border.width: 3
+        }
+        
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 30
+            spacing: 20
+            
+            Text {
+                text: "🔄 Ejecución en Curso Detectada"
+                font.pixelSize: 20
+                font.bold: true
+                color: "#D68910"
+                Layout.alignment: Qt.AlignHCenter
+            }
+            
+            Text {
+                text: resumedProgramAfterLogin ? 
+                      `Se detectó una ejecución interrumpida del programa:\n"${resumedProgramAfterLogin.name}"` : ""
+                font.pixelSize: 16
+                color: "#2C3E50"
+                Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                Layout.fillWidth: true
+            }
+            
+            Text {
+                text: "La ejecución ha sido resumida automáticamente."
+                font.pixelSize: 14
+                color: "#7F8C8D"
+                Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: Text.AlignHCenter
+            }
+            
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 20
+                spacing: 20
+                
+                Button {
+                    text: "Continuar en Dashboard"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#95A5A6" : "#BDC3C7"
+                        radius: 8
+                        border.color: "#85929E"
+                        border.width: 1
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#2C3E50"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        executionResumedDialog.close()
+                    }
+                }
+                
+                Button {
+                    text: "Ir a Ejecución"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 50
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#E67E22" : "#F39C12"
+                        radius: 8
+                        border.color: "#D68910"
+                        border.width: 1
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        executionResumedDialog.close()
+                        // Ir a programas y abrir ejecución
+                        stackView.push(programManagementComponent)
+                        openResumedExecutionTimer.start()
+                    }
+                }
+            }
+        }
+        
+        // Timer para abrir ejecución resumida
+        Timer {
+            id: openResumedExecutionTimer
+            interval: 500
+            repeat: false
+            onTriggered: {
+                var programManagement = stackView.currentItem
+                if (programManagement && programManagement.executionDialog && resumedProgramAfterLogin) {
+                    programManagement.executionDialog.openForProgram(resumedProgramAfterLogin)
+                }
+            }
+        }
+    }
+    
+    // Connections para manejar ejecución resumida
+    Connections {
+        target: executionController
+        
+        function onExecutionResumed(programData) {
+            console.log("Señal de ejecución resumida recibida")
+            // La verificación ya se hace en el timer después del login
         }
     }
 }
