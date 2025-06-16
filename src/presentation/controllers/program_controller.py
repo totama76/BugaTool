@@ -22,9 +22,16 @@ class ProgramController(QObject):
         self._programs = []
         self._current_program = None
         self._search_term = ""
+        self._initialized = False  # Flag para controlar inicialización
         
-        # Cargar programas iniciales
-        self.refresh_programs()
+        print("ProgramController inicializado")
+    
+    def ensure_initialized(self):
+        """Asegura que los programas estén cargados"""
+        if not self._initialized:
+            print("Cargando programas iniciales...")
+            self.refresh_programs()
+            self._initialized = True
     
     @pyqtSlot(str, str, float, float, int, int)
     def create_program(self, name: str, description: str, min_pressure: float, 
@@ -117,8 +124,10 @@ class ProgramController(QObject):
         try:
             if self._search_term:
                 programs = self.program_service.search_programs(self._search_term)
+                print(f"Programas encontrados con búsqueda '{self._search_term}': {len(programs)}")
             else:
                 programs = self.program_service.get_all_programs()
+                print(f"Programas cargados: {len(programs)}")
             
             # Convertir a lista de diccionarios para QML
             self._programs = [program.to_dict() for program in programs]
@@ -133,16 +142,26 @@ class ProgramController(QObject):
     def search_programs(self, search_term: str):
         """Busca programas por término"""
         self._search_term = search_term.strip()
+        print(f"Buscando programas con término: '{self._search_term}'")
         self.refresh_programs()
     
     @pyqtSlot()
     def clear_search(self):
         """Limpia la búsqueda"""
+        print("Limpiando búsqueda...")
         self._search_term = ""
         self.refresh_programs()
     
+    @pyqtSlot()
+    def load_programs(self):
+        """Método público para cargar programas desde QML"""
+        print("load_programs llamado desde QML")
+        self.ensure_initialized()
+    
     def get_programs(self) -> list:
         """Obtiene la lista de programas para QML"""
+        # Asegurar que los programas estén cargados cuando QML los solicite
+        self.ensure_initialized()
         return self._programs
     
     def get_can_manage(self) -> bool:

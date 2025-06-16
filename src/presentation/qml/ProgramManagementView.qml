@@ -13,15 +13,23 @@ Rectangle {
         GradientStop { position: 1.0; color: "#34495E" }
     }
     
+    // Cargar programas cuando se muestra la vista
+    Component.onCompleted: {
+        console.log("ProgramManagementView cargada")
+        if (programController) {
+            programController.load_programs()
+        }
+    }
+    
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 20
-        spacing: 20
+        anchors.margins: 30
+        spacing: 25
         
         // Header
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 60
+            Layout.preferredHeight: 80
             color: "transparent"
             border.color: "#3498DB"
             border.width: 2
@@ -29,14 +37,16 @@ Rectangle {
             
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 15
+                anchors.margins: 20
                 
                 Button {
                     text: "← Volver"
+                    implicitWidth: 120
+                    implicitHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? "#2980B9" : "#3498DB"
-                        radius: 6
+                        radius: 8
                         border.color: "#2471A3"
                         border.width: 1
                     }
@@ -44,7 +54,7 @@ Rectangle {
                     contentItem: Text {
                         text: parent.text
                         color: "white"
-                        font.pixelSize: 14
+                        font.pixelSize: 16
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -55,7 +65,7 @@ Rectangle {
                 
                 Text {
                     text: "Gestión de Programas"
-                    font.pixelSize: 20
+                    font.pixelSize: 24
                     font.bold: true
                     color: "#ECF0F1"
                     Layout.fillWidth: true
@@ -65,10 +75,12 @@ Rectangle {
                 Button {
                     text: "Nuevo Programa"
                     visible: programController ? programController.canManage : false
+                    implicitWidth: 160
+                    implicitHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? "#27AE60" : "#2ECC71"
-                        radius: 6
+                        radius: 8
                         border.color: "#229954"
                         border.width: 1
                     }
@@ -76,7 +88,7 @@ Rectangle {
                     contentItem: Text {
                         text: parent.text
                         color: "white"
-                        font.pixelSize: 14
+                        font.pixelSize: 16
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -92,22 +104,23 @@ Rectangle {
         // Barra de búsqueda
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 50
+            Layout.preferredHeight: 60
             color: "#ECF0F1"
-            radius: 8
+            radius: 10
             border.color: "#BDC3C7"
             border.width: 1
             
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
+                anchors.margins: 15
+                spacing: 15
                 
                 TextField {
                     id: searchField
                     Layout.fillWidth: true
+                    height: 40
                     placeholderText: "Buscar programas..."
-                    font.pixelSize: 14
+                    font.pixelSize: 16
                     
                     background: Rectangle {
                         color: "transparent"
@@ -131,17 +144,18 @@ Rectangle {
                 
                 Button {
                     text: "🔍"
-                    implicitWidth: 40
+                    implicitWidth: 50
+                    implicitHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? "#2980B9" : "#3498DB"
-                        radius: 4
+                        radius: 6
                     }
                     
                     contentItem: Text {
                         text: parent.text
                         color: "white"
-                        font.pixelSize: 16
+                        font.pixelSize: 18
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -155,17 +169,18 @@ Rectangle {
                 
                 Button {
                     text: "✖"
-                    implicitWidth: 40
+                    implicitWidth: 50
+                    implicitHeight: 40
                     
                     background: Rectangle {
                         color: parent.pressed ? "#C0392B" : "#E74C3C"
-                        radius: 4
+                        radius: 6
                     }
                     
                     contentItem: Text {
                         text: parent.text
                         color: "white"
-                        font.pixelSize: 12
+                        font.pixelSize: 14
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -177,6 +192,33 @@ Rectangle {
                         }
                     }
                 }
+                
+                // Botón refrescar para forzar recarga
+                Button {
+                    text: "↻"
+                    implicitWidth: 50
+                    implicitHeight: 40
+                    
+                    background: Rectangle {
+                        color: parent.pressed ? "#8E44AD" : "#9B59B6"
+                        radius: 6
+                    }
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "white"
+                        font.pixelSize: 18
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    
+                    onClicked: {
+                        console.log("Refrescando lista de programas...")
+                        if (programController) {
+                            programController.refresh_programs()
+                        }
+                    }
+                }
             }
         }
         
@@ -185,18 +227,18 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: "#ECF0F1"
-            radius: 10
+            radius: 12
             border.color: "#BDC3C7"
             border.width: 1
             
             ScrollView {
                 anchors.fill: parent
-                anchors.margins: 10
+                anchors.margins: 15
                 
                 ListView {
                     id: programListView
                     model: programController ? programController.programs : []
-                    spacing: 10
+                    spacing: 15
                     
                     delegate: ProgramListItem {
                         width: programListView.width
@@ -222,7 +264,7 @@ Rectangle {
                     Text {
                         anchors.centerIn: parent
                         text: searchField.text !== "" ? "No se encontraron programas" : "No hay programas creados"
-                        font.pixelSize: 16
+                        font.pixelSize: 18
                         color: "#7F8C8D"
                         visible: programListView.count === 0
                     }
@@ -247,29 +289,29 @@ Rectangle {
         property var programToDelete: null
         
         anchors.centerIn: parent
-        width: Math.min(400, parent.width * 0.8)
-        height: 200
+        width: Math.min(500, parent.width * 0.8)
+        height: 250
         
         title: "Confirmar Eliminación"
         modal: true
         
         background: Rectangle {
             color: "#ECF0F1"
-            radius: 10
+            radius: 12
             border.color: "#BDC3C7"
             border.width: 2
         }
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 20
+            anchors.margins: 30
+            spacing: 25
             
             Text {
                 Layout.fillWidth: true
                 text: deleteConfirmDialog.programToDelete ? 
                       `¿Está seguro que desea eliminar el programa "${deleteConfirmDialog.programToDelete.name}"?` : ""
-                font.pixelSize: 14
+                font.pixelSize: 16
                 color: "#2C3E50"
                 wrapMode: Text.WordWrap
                 horizontalAlignment: Text.AlignHCenter
@@ -277,20 +319,22 @@ Rectangle {
             
             RowLayout {
                 Layout.fillWidth: true
+                spacing: 20
                 
                 Button {
                     text: "Cancelar"
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 50
                     
                     background: Rectangle {
                         color: parent.pressed ? "#95A5A6" : "#BDC3C7"
-                        radius: 6
+                        radius: 8
                     }
                     
                     contentItem: Text {
                         text: parent.text
                         color: "#2C3E50"
-                        font.pixelSize: 14
+                        font.pixelSize: 16
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -302,16 +346,17 @@ Rectangle {
                 Button {
                     text: "Eliminar"
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 50
                     
                     background: Rectangle {
                         color: parent.pressed ? "#C0392B" : "#E74C3C"
-                        radius: 6
+                        radius: 8
                     }
                     
                     contentItem: Text {
                         text: parent.text
                         color: "white"
-                        font.pixelSize: 14
+                        font.pixelSize: 16
                         font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -339,6 +384,15 @@ Rectangle {
         
         function onOperationResult(success, message) {
             messageDialog.showMessage(message, !success)
+        }
+    }
+    
+    // Debug: Connections para monitorear cambios
+    Connections {
+        target: programController
+        
+        function onProgramsChanged() {
+            console.log("Programas actualizados en QML, total:", programController ? programController.programs.length : 0)
         }
     }
 }

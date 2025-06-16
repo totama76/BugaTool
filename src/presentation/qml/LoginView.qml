@@ -19,8 +19,8 @@ Rectangle {
     // Contenedor central
     Rectangle {
         anchors.centerIn: parent
-        width: Math.min(400, parent.width * 0.8)
-        height: Math.min(550, parent.height * 0.9)  // Aumentado de 500 a 550
+        width: Math.min(500, parent.width * 0.7)  // Aumentado de 400 a 500
+        height: Math.min(650, parent.height * 0.85)  // Aumentado de 550 a 650
         
         color: "#ECF0F1"
         radius: 20
@@ -40,25 +40,25 @@ Rectangle {
         
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 30  // Reducido de 40 a 30
-            spacing: 20  // Reducido de 25 a 20
+            anchors.margins: 40  // Aumentado de 30 a 40
+            spacing: 25  // Aumentado de 20 a 25
             
             // Logo y título
             Column {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 12  // Reducido de 15 a 12
+                spacing: 15  // Aumentado de 12 a 15
                 
                 Rectangle {
-                    width: 70  // Reducido de 80 a 70
-                    height: 70  // Reducido de 80 a 70
-                    radius: 35
+                    width: 90  // Aumentado de 70 a 90
+                    height: 90  // Aumentado de 70 a 90
+                    radius: 45
                     color: "#3498DB"
                     anchors.horizontalCenter: parent.horizontalCenter
                     
                     Text {
                         anchors.centerIn: parent
                         text: "🔒"
-                        font.pixelSize: 35  // Reducido de 40 a 35
+                        font.pixelSize: 45  // Aumentado de 35 a 45
                         color: "white"
                     }
                 }
@@ -66,18 +66,18 @@ Rectangle {
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "Sistema de Control de Presión"
-                    font.pixelSize: 16  // Reducido de 18 a 16
+                    font.pixelSize: 20  // Aumentado de 16 a 20
                     font.bold: true
                     color: "#2C3E50"
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
-                    width: parent.parent.width - 40
+                    width: parent.parent.width - 60  // Aumentado margen
                 }
                 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "Iniciar Sesión"
-                    font.pixelSize: 13  // Reducido de 14 a 13
+                    font.pixelSize: 16  // Aumentado de 13 a 16
                     color: "#7F8C8D"
                 }
             }
@@ -85,16 +85,16 @@ Rectangle {
             // Formulario de login
             Column {
                 Layout.fillWidth: true
-                spacing: 15  // Reducido de 20 a 15
+                spacing: 20  // Aumentado de 15 a 20
                 
                 // Campo usuario
                 Column {
                     width: parent.width
-                    spacing: 5
+                    spacing: 8  // Aumentado de 5 a 8
                     
                     Text {
                         text: "Usuario:"
-                        font.pixelSize: 14
+                        font.pixelSize: 16  // Aumentado de 14 a 16
                         font.bold: true
                         color: "#2C3E50"
                     }
@@ -102,8 +102,8 @@ Rectangle {
                     TextField {
                         id: usernameField
                         width: parent.width
-                        height: 40  // Reducido de 45 a 40
-                        font.pixelSize: 14
+                        height: 50  // Aumentado de 40 a 50
+                        font.pixelSize: 16  // Aumentado de 14 a 16
                         placeholderText: "Ingrese su usuario"
                         
                         background: Rectangle {
@@ -120,11 +120,11 @@ Rectangle {
                 // Campo contraseña
                 Column {
                     width: parent.width
-                    spacing: 5
+                    spacing: 8  // Aumentado de 5 a 8
                     
                     Text {
                         text: "Contraseña:"
-                        font.pixelSize: 14
+                        font.pixelSize: 16  // Aumentado de 14 a 16
                         font.bold: true
                         color: "#2C3E50"
                     }
@@ -132,8 +132,8 @@ Rectangle {
                     TextField {
                         id: passwordField
                         width: parent.width
-                        height: 40  // Reducido de 45 a 40
-                        font.pixelSize: 14
+                        height: 50  // Aumentado de 40 a 50
+                        font.pixelSize: 16  // Aumentado de 14 a 16
                         echoMode: TextInput.Password
                         placeholderText: "Ingrese su contraseña"
                         
@@ -149,12 +149,12 @@ Rectangle {
                 }
             }
             
-            // Botón de login (movido más arriba)
+            // Botón de login
             Button {
                 id: loginButton
                 Layout.fillWidth: true
-                Layout.preferredHeight: 45  // Reducido de 50 a 45
-                Layout.topMargin: 10  // Añadido margen superior
+                Layout.preferredHeight: 55  // Aumentado de 45 a 55
+                Layout.topMargin: 15  // Aumentado de 10 a 15
                 
                 enabled: !isLoading && usernameField.text.trim() !== "" && passwordField.text.trim() !== ""
                 
@@ -167,18 +167,18 @@ Rectangle {
                 
                 contentItem: Row {
                     anchors.centerIn: parent
-                    spacing: 10
+                    spacing: 12  // Aumentado de 10 a 12
                     
                     Text {
                         text: isLoading ? "⏳" : "🔑"
-                        font.pixelSize: 16
+                        font.pixelSize: 18  // Aumentado de 16 a 18
                         color: "white"
                         anchors.verticalCenter: parent.verticalCenter
                     }
                     
                     Text {
                         text: isLoading ? "Iniciando sesión..." : "Iniciar Sesión"
-                        font.pixelSize: 16
+                        font.pixelSize: 18  // Aumentado de 16 a 18
                         font.bold: true
                         color: "white"
                         anchors.verticalCenter: parent.verticalCenter
@@ -195,7 +195,7 @@ Rectangle {
             // Información de usuario por defecto
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 70  // Reducido de 80 a 70
+                Layout.preferredHeight: 80  // Aumentado de 70 a 80
                 color: "#D5DBDB"
                 radius: 8
                 border.color: "#AEB6BF"
@@ -203,12 +203,12 @@ Rectangle {
                 
                 Column {
                     anchors.centerIn: parent
-                    spacing: 4  // Reducido de 5 a 4
+                    spacing: 6  // Aumentado de 4 a 6
                     
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "Usuario por defecto:"
-                        font.pixelSize: 12
+                        font.pixelSize: 14  // Aumentado de 12 a 14
                         color: "#566573"
                         font.bold: true
                     }
@@ -216,7 +216,7 @@ Rectangle {
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "Usuario: admin | Contraseña: admin123"
-                        font.pixelSize: 11
+                        font.pixelSize: 13  // Aumentado de 11 a 13
                         color: "#566573"
                     }
                 }
@@ -226,10 +226,10 @@ Rectangle {
             Text {
                 id: messageText
                 Layout.fillWidth: true
-                Layout.preferredHeight: 25  // Reducido de 30 a 25
+                Layout.preferredHeight: 30  // Aumentado de 25 a 30
                 
                 text: ""
-                font.pixelSize: 12
+                font.pixelSize: 14  // Aumentado de 12 a 14
                 color: "#E74C3C"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -240,7 +240,7 @@ Rectangle {
             // Espaciador mínimo
             Item { 
                 Layout.fillHeight: true 
-                Layout.minimumHeight: 10  // Altura mínima para evitar cortes
+                Layout.minimumHeight: 15  // Aumentado de 10 a 15
             }
         }
     }
