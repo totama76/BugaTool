@@ -1,87 +1,91 @@
 """
 Controlador principal de la aplicación
-Gestiona la comunicación entre QML y la lógica de negocio
+Gestiona la simulación de datos y la integración con otros controladores
 """
 
-from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QTimer, pyqtProperty
-
-# Simulación de datos para desarrollo inicial
 import random
-import time
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal, pyqtSlot, pyqtProperty
 
 class MainController(QObject):
-    """Controlador principal para la interfaz QML"""
+    """Controlador principal para la simulación y control"""
     
-    # Señales para notificar cambios a QML
-    currentPressureChanged = pyqtSignal(float)
-    systemStatusChanged = pyqtSignal(str)
-    alarmStateChanged = pyqtSignal(bool)
+    pressureChanged = pyqtSignal(float)
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        
+        # Timer para simulación
+        self.simulation_timer = QTimer()
+        self.simulation_timer.timeout.connect(self._update_simulation)
+        self.simulation_timer.setInterval(1000)  # 1 segundo
+        
+        # Estado de simulación
+        self.is_simulation_running = False
         self._current_pressure = 0.0
-        self._system_status = "Listo"
-        self._alarm_active = False
-        self._is_simulation_active = True
         
-        # Timer para simulación de lecturas de presión
-        self._simulation_timer = QTimer()
-        self._simulation_timer.timeout.connect(self._simulate_pressure_reading)
+        # Referencia al servicio de ejecución (se asignará desde main_app)
+        self.execution_service = None
         
-        if self._is_simulation_active:
-            self._simulation_timer.start(1000)  # Actualizar cada segundo
+        print("MainController inicializado")
+    
+    def set_execution_service(self, execution_service):
+        """Establece la referencia al servicio de ejecución"""
+        self.execution_service = execution_service
+        
+        # Conectar señal de presión del servicio de ejecución
+        if self.execution_service:
+            self.execution_service.pressureUpdated.connect(self._on_execution_pressure_updated)
+            print("ExecutionService conectado al MainController")
     
     @pyqtSlot()
     def startSimulation(self):
-        """Inicia la simulación de lecturas de presión"""
-        if not self._simulation_timer.isActive():
-            self._simulation_timer.start(1000)
-            self._is_simulation_active = True
-            self.set_system_status("Simulación activa")
+        """Inicia la simulación de presión"""
+        if self.execution_service and self.execution_service.is_running:
+            print("No se puede iniciar simulación: hay un programa ejecutándose")
+            return
+            
+        print("Iniciando simulación de presión")
+        self.is_simulation_running = True
+        self.simulation_timer.start()
     
     @pyqtSlot()
     def stopSimulation(self):
-        """Detiene la simulación de lecturas de presión"""
-        if self._simulation_timer.isActive():
-            self._simulation_timer.stop()
-            self._is_simulation_active = False
-            self.set_system_status("Simulación detenida")
+        """Detiene la simulación de presión"""
+        print("Deteniendo simulación de presión")
+        self.is_simulation_running = False
+        self.simulation_timer.stop()
+        self._current_pressure = 0.0
+        self.pressureChanged.emit(self._current_pressure)
     
-    def _simulate_pressure_reading(self):
-        """Simula una lectura de sensor de presión"""
-        # Simulación básica: variación aleatoria entre 0 y 100
-        base_pressure = 50.0
-        variation = random.uniform(-10.0, 10.0)
-        new_pressure = max(0.0, min(100.0, base_pressure + variation))
+    def _update_simulation(self):
+        """Actualiza los valores de simulación"""
+        if not self.is_simulation_running:
+            return
+            
+        # Verificar si hay una ejecución real en curso
+        if self.execution_service and self.execution_service.is_running:
+            # Si hay ejecución real, detener simulación
+            self.stopSimulation()
+            return
         
-        self.set_current_pressure(new_pressure)
+        # Generar variación de presión simulada
+        variation = random.uniform(-2.0, 3.0)
+        self._current_pressure += variation
+        
+        # Limitar valores
+        self._current_pressure = max(0.0, min(100.0, self._current_pressure))
+        
+        # Emitir señal de cambio
+        self.pressureChanged.emit(self._current_pressure)
     
-    # Propiedades accesibles desde QML
-    def get_current_pressure(self):
+    def _on_execution_pressure_updated(self, pressure: float):
+        """Maneja actualización de presión desde ejecución real"""
+        self._current_pressure = pressure
+        self.pressureChanged.emit(self._current_pressure)
+    
+    def get_current_pressure(self) -> float:
+        """Obtiene la presión actual"""
         return self._current_pressure
     
-    def set_current_pressure(self, value):
-        if self._current_pressure != value:
-            self._current_pressure = value
-            self.currentPressureChanged.emit(value)
-    
-    def get_system_status(self):
-        return self._system_status
-    
-    def set_system_status(self, status):
-        if self._system_status != status:
-            self._system_status = status
-            self.systemStatusChanged.emit(status)
-    
-    def get_alarm_state(self):
-        return self._alarm_active
-    
-    def set_alarm_state(self, state):
-        if self._alarm_active != state:
-            self._alarm_active = state
-            self.alarmStateChanged.emit(state)
-    
-    # Propiedades para QML usando el método tradicional
-    currentPressure = pyqtProperty(float, get_current_pressure, notify=currentPressureChanged)
-    systemStatus = pyqtProperty(str, get_system_status, notify=systemStatusChanged)
-    alarmState = pyqtProperty(bool, get_alarm_state, notify=alarmStateChanged)
+    # Propiedades para QML
+    currentPressure = pyqtProperty(float, get_current_pressure, notify=pressureChanged)

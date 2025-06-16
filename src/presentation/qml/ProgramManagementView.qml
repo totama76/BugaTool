@@ -255,8 +255,7 @@ Rectangle {
                         }
                         
                         onExecuteRequested: {
-                            // TODO: Implementar ejecución de programa
-                            messageDialog.showMessage("Funcionalidad de ejecución próximamente", false)
+                            executionDialog.openForProgram(programData)
                         }
                     }
                     
@@ -279,6 +278,23 @@ Rectangle {
         
         onProgramSaved: {
             // El controlador ya actualiza la lista automáticamente
+        }
+    }
+    
+    // Dialog de ejecución de programas
+    ProgramExecutionDialog {
+        id: executionDialog
+        
+        onExecutionRequested: function(programId) {
+            if (executionController) {
+                executionController.start_execution(programId)
+            }
+        }
+        
+        onStopRequested: {
+            if (executionController) {
+                executionController.stop_execution()
+            }
         }
     }
     
@@ -364,35 +380,4 @@ Rectangle {
                     
                     onClicked: {
                         if (programController && deleteConfirmDialog.programToDelete) {
-                            programController.delete_program(deleteConfirmDialog.programToDelete.id)
-                        }
-                        deleteConfirmDialog.close()
-                    }
-                }
-            }
-        }
-    }
-    
-    // Dialog para mensajes
-    MessageDialog {
-        id: messageDialog
-    }
-    
-    // Connections para manejar resultados de operaciones
-    Connections {
-        target: programController
-        
-        function onOperationResult(success, message) {
-            messageDialog.showMessage(message, !success)
-        }
-    }
-    
-    // Debug: Connections para monitorear cambios
-    Connections {
-        target: programController
-        
-        function onProgramsChanged() {
-            console.log("Programas actualizados en QML, total:", programController ? programController.programs.length : 0)
-        }
-    }
-}
+                            programController.delete_program(deleteConfirmDialog.programToDelete.i

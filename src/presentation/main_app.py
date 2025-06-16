@@ -17,6 +17,7 @@ from utils.i18n_manager import I18nManager
 from presentation.controllers.main_controller import MainController
 from presentation.controllers.auth_controller import AuthController
 from presentation.controllers.program_controller import ProgramController
+from presentation.controllers.execution_controller import ExecutionController
 
 class PressureControlApp:
     """Aplicación principal del sistema de control de presión"""
@@ -34,8 +35,12 @@ class PressureControlApp:
         print("Inicializando controladores...")
         self.main_controller = MainController()
         self.auth_controller = AuthController()
-        # Pasar el servicio de autenticación al controlador de programas
+        # Pasar el servicio de autenticación a los demás controladores
         self.program_controller = ProgramController(self.auth_controller.auth_service)
+        self.execution_controller = ExecutionController(self.auth_controller.auth_service)
+        
+        # Conectar servicios entre controladores
+        self.main_controller.set_execution_service(self.execution_controller.get_execution_service())
         
         # Inicializar base de datos
         print("Inicializando base de datos...")
@@ -80,6 +85,7 @@ class PressureControlApp:
         qmlRegisterType(MainController, "PressureControl", 1, 0, "MainController")
         qmlRegisterType(AuthController, "PressureControl", 1, 0, "AuthController")
         qmlRegisterType(ProgramController, "PressureControl", 1, 0, "ProgramController")
+        qmlRegisterType(ExecutionController, "PressureControl", 1, 0, "ExecutionController")
         print("Tipos QML registrados.")
     
     def _load_main_qml(self):
@@ -95,6 +101,7 @@ class PressureControlApp:
         self.engine.rootContext().setContextProperty("mainController", self.main_controller)
         self.engine.rootContext().setContextProperty("authController", self.auth_controller)
         self.engine.rootContext().setContextProperty("programController", self.program_controller)
+        self.engine.rootContext().setContextProperty("executionController", self.execution_controller)
         self.engine.rootContext().setContextProperty("i18nManager", self.i18n_manager)
         
         # Cargar la interfaz principal
